@@ -1,0 +1,9 @@
+[
+  {
+    "nome": "igrejamult",
+    "cliente_repo": "igrejamult/igrejamult",
+    "hub_repo": "PROH-Media/igrejamult",
+    "branch": "main",
+    "token_origem": "TOKEN_IGREJAMULT"
+  }
+]

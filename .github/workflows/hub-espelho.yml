@@ -1,0 +1,87 @@
+name: Hub espelho (cliente para deploy)
+
+# Espelha cada repositório de cliente (fonte/principal) para o repositório de
+# deploy na organização (que a Hostinger publica). Mão única: só LÊ o cliente,
+# só ESCREVE no destino da org. Cada cliente usa seu próprio token de leitura.
+
+on:
+  schedule:
+    - cron: "23 */2 * * *"   # rede de segurança; o normal é o gatilho instantâneo
+  workflow_dispatch:
+    inputs:
+      projeto:
+        description: "Nome do projeto (do projetos.json) ou 'todos'"
+        default: "todos"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hub-espelho
+  cancel-in-progress: false
+
+jobs:
+  montar-matriz:
+    runs-on: ubuntu-latest
+    outputs:
+      matriz: ${{ steps.set.outputs.matriz }}
+      tem: ${{ steps.set.outputs.tem }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set
+        run: |
+          set -euo pipefail
+          FILTRO="${{ inputs.projeto || 'todos' }}"
+          if [ -z "$FILTRO" ] || [ "$FILTRO" = "todos" ]; then
+            M=$(jq -c '{include: .}' projetos.json)
+          else
+            M=$(jq -c --arg n "$FILTRO" '{include: [.[] | select(.nome==$n)]}' projetos.json)
+          fi
+          echo "matriz=$M" >> "$GITHUB_OUTPUT"
+          CNT=$(echo "$M" | jq '.include | length')
+          echo "tem=$([ "$CNT" -gt 0 ] && echo sim || echo nao)" >> "$GITHUB_OUTPUT"
+
+  espelho:
+    needs: montar-matriz
+    if: needs.montar-matriz.outputs.tem == 'sim'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJson(needs.montar-matriz.outputs.matriz) }}
+    env:
+      LT: ${{ secrets[matrix.token_origem] }}
+      PT: ${{ secrets.HUB_TOKEN }}
+      NOME: ${{ matrix.nome }}
+      SRC: ${{ matrix.cliente_repo }}
+      DST: ${{ matrix.hub_repo }}
+      BR: ${{ matrix.branch }}
+    steps:
+      - name: Espelhar "${{ matrix.nome }}"
+        run: |
+          set -euo pipefail
+          if [ -z "${LT:-}" ]; then
+            echo "::error::Token de origem '${{ matrix.token_origem }}' não cadastrado (secret ausente)."
+            exit 1
+          fi
+          if [ -z "${PT:-}" ]; then
+            echo "::error::Secret HUB_TOKEN (escrita na org) não cadastrado."
+            exit 1
+          fi
+          git config --global user.name  "hub-bot"
+          git config --global user.email "hub-bot@users.noreply.github.com"
+          mkdir w && cd w && git init -q
+          git remote add src "https://x-access-token:${LT}@github.com/${SRC}.git"
+          git remote add dst "https://x-access-token:${PT}@github.com/${DST}.git"
+
+          git fetch -q src "$BR" || { echo "::error::Não li ${SRC}#${BR} (token de origem sem acesso?)"; exit 1; }
+          NOVO=$(git rev-parse FETCH_HEAD)
+          ATUAL=$(git ls-remote dst "refs/heads/${BR}" | awk '{print $1}')
+          if [ "$NOVO" = "${ATUAL:-nada}" ]; then
+            echo "Sem novidades em ${NOME}."
+          else
+            git push -q dst "+${NOVO}:refs/heads/${BR}"
+            TAG="backup/${NOME}/$(date -u +%Y-%m-%d-%H%M%S)"
+            git push -q dst "${NOVO}:refs/tags/${TAG}"
+            echo "🗂️ ${NOME}: espelhado; versão ${TAG} guardada. A Hostinger republica em seguida."
+          fi
