@@ -74,7 +74,11 @@ jobs:
           git remote add src "https://x-access-token:${LT}@github.com/${SRC}.git"
           git remote add dst "https://x-access-token:${PT}@github.com/${DST}.git"
 
-          git fetch -q src "$BR" || { echo "::error::Não li ${SRC}#${BR} (token de origem sem acesso?)"; exit 1; }
+          if ! git fetch src "$BR" 2>/tmp/giterr; then
+            echo "::error::Falha ao ler ${SRC}#${BR} com o token '${{ matrix.token_origem }}':"
+            sed -E 's/x-access-token:[^@]*/x-access-token:***/g' /tmp/giterr
+            exit 1
+          fi
           NOVO=$(git rev-parse FETCH_HEAD)
           ATUAL=$(git ls-remote dst "refs/heads/${BR}" | awk '{print $1}')
           if [ "$NOVO" = "${ATUAL:-nada}" ]; then
