@@ -82,7 +82,17 @@ jobs:
           NOVO=$(git rev-parse FETCH_HEAD)
           ATUAL=$(git ls-remote dst "refs/heads/${BR}" | awk '{print $1}')
           if [ "$NOVO" = "${ATUAL:-nada}" ]; then
-            echo "Sem novidades em ${NOME}."
+            # Conteúdo já espelhado. Se o projeto ainda não tem NENHUMA versão
+            # guardada, registra a primeira agora: sem isto um espelho criado
+            # fora deste fluxo ficaria para sempre com zero versões, e o painel
+            # o mostraria como "aguardando 1ª cópia" por tempo indeterminado.
+            if [ -z "$(git ls-remote dst "refs/tags/backup/${NOME}/*" | head -1)" ]; then
+              TAG="backup/${NOME}/$(date -u +%Y-%m-%d-%H%M%S)"
+              git push -q dst "${NOVO}:refs/tags/${TAG}"
+              echo "🗂️ ${NOME}: já estava espelhado; primeira versão ${TAG} registrada."
+            else
+              echo "Sem novidades em ${NOME}."
+            fi
           else
             git push -q dst "+${NOVO}:refs/heads/${BR}"
             TAG="backup/${NOME}/$(date -u +%Y-%m-%d-%H%M%S)"
