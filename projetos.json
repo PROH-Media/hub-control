@@ -1,1 +1,23 @@
-[{"nome":"igrejamult","cliente_repo":"igrejamult/igrejamult","hub_repo":"PROH-Media/igrejamult","branch":"main","token_origem":"TOKEN_IGREJAMULT"},{"nome":"igrejamultorg","cliente_repo":"igrejamult/igrejamultorg","hub_repo":"PROH-Media/igrejamultorg","branch":"main","token_origem":"TOKEN_IGREJAMULT"}]
+[
+  {
+    "nome": "igrejamult",
+    "cliente_repo": "igrejamult/igrejamult",
+    "hub_repo": "PROH-Media/igrejamult",
+    "branch": "main",
+    "token_origem": "TOKEN_IGREJAMULT"
+  },
+  {
+    "nome": "igrejamultorg",
+    "cliente_repo": "igrejamult/igrejamultorg",
+    "hub_repo": "PROH-Media/igrejamultorg",
+    "branch": "main",
+    "token_origem": "TOKEN_IGREJAMULT"
+  },
+  {
+    "nome": "proh-media-site",
+    "cliente_repo": "Proh2026Media/proh-media-site",
+    "hub_repo": "PROH-Media/proh-media-site",
+    "branch": "main",
+    "token_origem": "HUB_TOKEN"
+  }
+]
