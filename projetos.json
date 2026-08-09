@@ -19,5 +19,12 @@
     "hub_repo": "PROH-Media/proh-media-site",
     "branch": "main",
     "token_origem": "HUB_TOKEN"
+  },
+  {
+    "nome": "flow-proh-media",
+    "cliente_repo": "Proh2026Media/flow-proh-media",
+    "hub_repo": "PROH-Media/flow-proh-media",
+    "branch": "main",
+    "token_origem": "TOKEN_FLOW_PROH_MEDIA"
   }
 ]
