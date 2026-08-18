@@ -26,5 +26,12 @@
     "hub_repo": "PROH-Media/flow-proh-media",
     "branch": "main",
     "token_origem": "TOKEN_FLOW_PROH_MEDIA"
+  },
+  {
+    "nome": "eventflow-media",
+    "cliente_repo": "Proh2026Media/eventflow-media",
+    "hub_repo": "PROH-Media/eventflow-media",
+    "branch": "main",
+    "token_origem": "TOKEN_EVENTFLOW_MEDIA"
   }
 ]
