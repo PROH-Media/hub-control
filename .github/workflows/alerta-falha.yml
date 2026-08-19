@@ -1,0 +1,44 @@
+name: Alerta de falha
+
+# Abre um aviso (issue) quando uma execução automática falha. Sem isto, uma
+# quebra fica invisível — foi o que deixou os backups parados ~20h em 18/08/2026.
+# O GitHub notifica por e-mail/app assim que a issue é criada.
+
+on:
+  workflow_run:
+    workflows: ["Hub espelho (cliente para deploy)"]
+    types: [completed]
+
+permissions:
+  issues: write
+  actions: read
+
+concurrency:
+  group: alerta-falha
+  cancel-in-progress: false
+
+jobs:
+  avisar:
+    if: github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      WF: ${{ github.event.workflow_run.name }}
+      URL: ${{ github.event.workflow_run.html_url }}
+    steps:
+      - name: Abrir ou atualizar o aviso
+        run: |
+          set -euo pipefail
+          TITULO="Falha automática: ${WF}"
+          LISTA=$(gh issue list --repo "$REPO" --state open --label falha --limit 50 \
+                    --json number,title 2>/dev/null || echo '[]')
+          NUM=$(jq -r --arg t "$TITULO" '[.[] | select(.title==$t)] | .[0].number // empty' <<<"$LISTA")
+          if [ -n "${NUM:-}" ]; then
+            gh issue comment "$NUM" --repo "$REPO" -b "Falhou de novo em $(date -u +'%d/%m %H:%M') UTC — ${URL}"
+            echo "Aviso #${NUM} atualizado."
+          else
+            CORPO=$(printf 'A execução automática de **%s** falhou.\n\nLog: %s\n\nCausas comuns: token vencido ou sem acesso, repositório renomeado, conflito de merge.\n\nQuando resolver, **feche este aviso** — ele volta sozinho se falhar de novo.' "$WF" "$URL")
+            gh issue create --repo "$REPO" --label falha --title "$TITULO" --body "$CORPO"
+            echo "Aviso criado."
+          fi
