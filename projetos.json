@@ -33,5 +33,12 @@
     "hub_repo": "PROH-Media/eventflow-media",
     "branch": "main",
     "token_origem": "TOKEN_EVENTFLOW_MEDIA"
+  },
+  {
+    "nome": "barber-buzz-blades",
+    "cliente_repo": "Proh2026Media/barber-buzz-blades",
+    "hub_repo": "PROH-Media/barber-buzz-blades",
+    "branch": "main",
+    "token_origem": "TOKEN_BARBER_BUZZ_BLADES"
   }
 ]
